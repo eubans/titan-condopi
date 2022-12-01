@@ -1,0 +1,10 @@
+[02-Oct-2022 18:09:01 America/Chicago] PHP Warning:  "continue" targeting switch is equivalent to "break". Did you mean to use "continue 2"? in /home2/i50wpgkm/condopi.com/adminer.php on line 1176
+[11-Oct-2022 22:02:29 America/Chicago] PHP Warning:  "continue" targeting switch is equivalent to "break". Did you mean to use "continue 2"? in /home2/i50wpgkm/condopi.com/adminer.php on line 1176
+[14-Nov-2022 00:08:40 America/Chicago] PHP Warning:  "continue" targeting switch is equivalent to "break". Did you mean to use "continue 2"? in /home2/i50wpgkm/condopi.com/adminer.php on line 1176
+[18-Nov-2022 13:57:06 America/Chicago] PHP Warning:  "continue" targeting switch is equivalent to "break". Did you mean to use "continue 2"? in /home2/i50wpgkm/condopi.com/adminer.php on line 1176
+[21-Nov-2022 18:16:11 America/Chicago] PHP Warning:  "continue" targeting switch is equivalent to "break". Did you mean to use "continue 2"? in /home2/i50wpgkm/condopi.com/adminer.php on line 1176
+[21-Nov-2022 18:16:16 America/Chicago] PHP Warning:  mysqli::query(): LOAD DATA LOCAL INFILE forbidden in /home2/i50wpgkm/condopi.com/adminer.php on line 1445
+[21-Nov-2022 18:16:16 America/Chicago] PHP Warning:  mysqli::query(): Error while reading QUERY's response packet. PID=693588 in /home2/i50wpgkm/condopi.com/adminer.php on line 1445
+[23-Nov-2022 21:03:49 America/Chicago] PHP Warning:  "continue" targeting switch is equivalent to "break". Did you mean to use "continue 2"? in /home2/i50wpgkm/condopi.com/adminer.php on line 1176
+[23-Nov-2022 21:03:54 America/Chicago] PHP Warning:  mysqli::query(): LOAD DATA LOCAL INFILE forbidden in /home2/i50wpgkm/condopi.com/adminer.php on line 1445
+[23-Nov-2022 21:03:54 America/Chicago] PHP Warning:  mysqli::query(): Error while reading QUERY's response packet. PID=514709 in /home2/i50wpgkm/condopi.com/adminer.php on line 1445

@@ -1,0 +1,41 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" >
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1">
+<metadata>
+Created by FontForge 20170731 at Fri Apr 26 10:12:22 2019
+ By Aleksey,,,
+4.1 (c)1986-92 by Richard A. Ware. All Rights Reserved.
+</metadata>
+<defs>
+<font id="BodoniFLF-Italic" horiz-adv-x="0" >
+  <font-face 
+    font-family="BodoniFLF"
+    font-weight="500"
+    font-style="italic"
+    font-stretch="normal"
+    units-per-em="1000"
+    panose-1="2 0 6 3 9 0 0 9 0 3"
+    ascent="800"
+    descent="-200"
+    bbox="89 470 362 665"
+    underline-thickness="20"
+    underline-position="-196"
+    slope="-12"
+    unicode-range="U+000A-0020"
+  />
+<missing-glyph horiz-adv-x="500" 
+ />
+    <glyph glyph-name=".notdef" horiz-adv-x="500" 
+ />
+    <glyph glyph-name=".null" 
+ />
+    <glyph glyph-name="nonmarkingreturn" 
+ />
+    <glyph glyph-name="breve" horiz-adv-x="387" 
+d="M192 525q34 0 67.5 11.5t56.5 31.5q6 5 7.5 8t1.5 6q0 5 -3.5 8.5t-8.5 3.5q-2 0 -4.5 -1t-7.5 -6q-18 -14 -47.5 -22.5t-59.5 -8.5q-26 0 -48.5 7.5t-33.5 21.5q-4 5 -5.5 6.5t-3.5 1.5q-5 0 -9.5 -4.5t-4.5 -10.5q0 -2 0.5 -3.5t4.5 -6.5q14 -21 40 -32t58 -11z" />
+    <glyph glyph-name="hungarumlaut" unicode="&#xa;" horiz-adv-x="489" 
+d="M188 665l-49 -186l13 -9l103 195h-67zM296 665l-50 -186l13 -9l103 195h-66z" />
+    <glyph glyph-name="space" unicode=" " horiz-adv-x="258" 
+ />
+  </font>
+</defs></svg>

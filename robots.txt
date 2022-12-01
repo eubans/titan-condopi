@@ -1,0 +1,3 @@
+User-agent:*
+Disallow:
+Sitemap: https://condopi.com/sitemap.xml

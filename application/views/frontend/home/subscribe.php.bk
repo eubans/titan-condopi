@@ -1,0 +1,33 @@
+<section class="section section-padding-b-30 section-contact">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="bg-white-001">
+                    <div class="bg-gray-001">
+                        <div class="bg-white-001">
+                            <div class="row">
+                                <div class="col-md-5"><img style="padding-top:30px" class="w-100" src="<?php echo base_url("skins/frontend/images/contact-photo.png"); ?>"></div>
+                                <div class="col-md-7">
+                                    <h1 class="text-uppercase georgia font-s-30 color-2b2b33"><span class="color-f12a53">FAST</span> HARD MONEY, <span class="color-f12a53">EASY</span> QUALIFY</h1>
+                                    <p class="libre-franklin-regular color-2b2b33 font-s-16">NO INCOME, NO DOCUMENTS, ALL CREDIT OKAY</p>
+                                    <p class="libre-franklin-regular color-2b2b33 font-s-16"><span class="color-f12a53">7.99%</span> Fixed Rate, <span class="color-f12a53">80%</span> LTV, Lender Fees at <span class="color-f12a53">2 pts</span></p>
+                                    <form class="listing-section-form" action="<?php echo base_url('home/subscribe'); ?>" method="POST">
+                                      <input type="text" required class="libre-franklin-regular font-s-14" value="<?php $user_info = $this->session->userdata('user_info'); echo @$user_info["email"]; ?>" placeholder="Enter your email address" name="email">
+                                      <button type="submit">Subscribe</button>
+                                    </form>
+    								<?php 
+			                            if($this->session->flashdata('message')){
+			                                echo $this->session->flashdata('message');
+			                            } else {
+			                            	echo '<p class="libre-franklin-regular color-2b2b33 font-s-16"><span class="color-f12a53">Sign up</span> now to get <u>pre-approved in 24 hours!!!</u></p>';
+			                            }
+			                        ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

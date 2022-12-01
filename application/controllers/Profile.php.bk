@@ -1,0 +1,846 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class Profile extends CI_Controller {
+
+	private $is_login = false;
+    private $data = array();
+    private $user_id = 0;
+	public function __construct()
+    {
+        parent::__construct();
+        if ($this->session->userdata('user_info')) {
+            $this->data["is_login"] = true;
+            $this->data['user'] = $this->session->userdata('user_info');
+            $this->user_id = $this->data['user']['id'];
+        }
+        else{
+            redirect(base_url('/home/'));
+        }
+    }
+
+	public function index()
+	{
+        if($this->input->post()){
+            $this->load->library('form_validation');
+            $this->form_validation->set_rules('first_name', 'First name', 'required|trim');
+            $this->form_validation->set_rules('last_name', 'Last name', 'required|trim');
+            $this->form_validation->set_rules('address', 'Address', 'required|trim');
+            if ($this->form_validation->run() == FALSE) {
+                $this->session->set_flashdata('message', '<div class="alert alert-danger">Please enter all information.</div>');
+            } else {
+                $emergency_contact = $this->input->post('emergency');
+                $shipping_address = $this->input->post('shipping');
+                $guest_profiles = $this->input->post('guest');
+                $arr   = array(
+                    'First_Name' => $this->input->post('first_name'),
+                    'Last_Name' => $this->input->post('last_name'),
+                    'Address' => $this->input->post('address'),
+                    'Gender' => $this->input->post('gender'),
+                    'Phone' => $this->input->post('phone'),
+                    'State' => $this->input->post('state'),
+                    'Zipcode' => $this->input->post('zipcode'),
+                    'Country' => $this->input->post('country')
+                );
+                $this->Common_model->update("Members", $arr,array('ID' => $this->user_id));
+                $this->session->set_flashdata('message', '<div class="alert alert-success">Save successfully.</div>');
+            }
+            redirect('/profile/');
+        }
+        $this->data['user'] = $this->Common_model->get_record('Members',array('ID' => $this->user_id));
+		$this->load->view('frontend/block/header',$this->data);
+		$this->load->view('frontend/profile/index',$this->data);
+		$this->load->view('frontend/block/footer',$this->data);
+	}
+
+    public function message()
+    {
+        $count_table =  $this->Common_model->count_table("Notification");
+        $page_current = ($this->input->get("per_page") != "") ? $this->input->get("per_page") : 0 ;    
+        $per_page = 20;
+        $page_current = ($page_current > 0) ? ($page_current - 1) : $page_current;
+        $offset = $per_page * $page_current;
+        $this->load->library('pagination');
+        $config['base_url'] = base_url("/product/");
+        $config['total_rows'] = $count_table ;
+        $config['per_page'] = $per_page;
+        $config['full_tag_open'] = '<ul class="pagination">';
+        $config['full_tag_close'] = '</ul>';
+        $config['cur_tag_open'] = '<li class="active"><a>';
+        $config['cur_tag_close'] = '</a></li>';
+        $config['num_tag_open'] = '<li>';
+        $config['num_tag_close'] = '</li>';
+        $config['prev_tag_open'] = '<li>';
+        $config['prev_tag_close'] = '</li>';
+        $config['next_tag_open'] = '<li>';
+        $config['next_tag_close'] = '</li>';
+        $config['next_link'] = 'Next &rarr;';
+        $config['prev_link'] = '&larr; Previous';
+        $config['first_link'] = '<< First';
+        $config['last_link'] = 'Last >>';
+        $config['last_tag_open'] = '<li>';
+        $config['last_tag_close'] = '</li>';
+        $config['first_tag_open'] = '<li>';
+        $config['first_tag_close'] = '</li>';
+        $config['enable_query_strings']  = true;
+        $config['page_query_string']  = true;
+        $config['query_string_segment'] = "per_page";
+        $config['use_page_numbers'] = TRUE;
+        $this->pagination->initialize($config);
+
+        $this->data['collections'] = $this->Common_model->get_raw('SELECT n.*, nm.IsRead FROM Notification n INNER JOIN Notification_Member nm ON n.ID = nm.Notification_ID WHERE nm.Member_ID = ' . $this->user_id . ' LIMIT ' . $per_page .' OFFSET ' . $offset);
+        $this->load->view('frontend/block/header',$this->data);
+        $this->load->view('frontend/profile/message',$this->data);
+        $this->load->view('frontend/block/footer',$this->data);
+    }
+
+    public function viewmsg($id)
+    {
+        if ($id == null || !is_numeric($id)) {
+            redirect('/profile/message');
+        }
+        // Find message
+        $this->data['collections'] = $this->Common_model->get_raw('SELECT n.* FROM Notification n INNER JOIN Notification_Member nm ON n.ID = nm.Notification_ID WHERE nm.Member_ID = ' . $this->user_id . ' AND n.ID = ' . $id);
+        if ($this->data['collections'] != null) {
+            // Update to status
+            $this->Common_model->update('Notification_Member', array('IsRead' => '1', 'Read_Date' => date('Y-m-d H:i:s')), array('Notification_ID' => $id, 'Member_ID' => $this->user_id));
+        }
+
+        $this->load->view('frontend/block/header',$this->data);
+        $this->load->view('frontend/profile/viewmsg',$this->data);
+        $this->load->view('frontend/block/footer',$this->data);
+    }
+
+	public function change_password()
+	{
+		$this->data['user'] = $this->Common_model->get_record('Members',array('ID' => $this->user_id));
+        if($this->input->post()){
+            $this->load->library('form_validation');
+            $this->form_validation->set_rules('password', 'Password', 'required|trim');
+            $this->form_validation->set_rules('confirm_password', 'Confirm Password', 'required|trim');
+            if ($this->form_validation->run() == FALSE) {
+                $this->session->set_flashdata('message', '<div class="alert alert-danger">Please enter all information.</div>');
+            } else {
+            	$password       = @$this->input->post('password');
+                $configpassword = @$this->input->post('confirm_password');
+                if (strlen($password) < 6) {
+                	$this->session->set_flashdata('message', '<div class="alert alert-danger">Password must have at least 6 characters.</div>');
+                } 
+                else if ($password != $configpassword) {                    
+                    $this->session->set_flashdata('message', '<div class="alert alert-danger">Passwords entered do not match.</div>');
+                }
+                else{
+                	$arr   = array(
+	                    'Password' => md5($this->data['user']['Email'] .':'.$password)
+	                );
+	                $this->Common_model->update("Members", $arr,array('ID' => $this->user_id));
+	                $this->session->set_flashdata('message', '<div class="alert alert-success">Save successfully.</div>');
+                }
+            }
+            redirect('/profile/change_password');
+        }
+		$this->load->view('frontend/block/header',$this->data);
+		$this->load->view('frontend/profile/change_password',$this->data);
+		$this->load->view('frontend/block/footer',$this->data);
+	}
+
+	public function review(){
+		$data = array('status' => 'error');
+		if (!$this->input->is_ajax_request()) {
+		   die(json_encode($data));
+		}
+		if($this->input->post()){
+            $this->load->library('form_validation');
+            $this->form_validation->set_rules('product_id', 'Product', 'required|trim');
+            $this->form_validation->set_rules('rating', 'Rating', 'required|trim');
+            $this->form_validation->set_rules('content', 'Content', 'required|trim');
+            if ($this->form_validation->run() == FALSE) {
+                $data['status'] = 'fail';
+                $data['message'] = 'Please enter all information.';
+            } else {
+            	$product_id = $this->input->post('product_id');
+            	$rating = $this->input->post('rating');
+            	$content = $this->input->post('content');
+
+            	$product = $this->Common_model->get_record('Products',array('ID' => $product_id));
+            	if(!(isset($product) && $product != null)){
+            		$data['status'] = 'fail';
+                	$data['message'] = 'Product Not Found.';
+            		die(json_encode($data));
+            	}
+
+            	if($rating <= 0 || $rating > 5){
+            		die(json_encode($data));
+            	}
+
+            	$review = $this->Common_model->get_record('Rating_Comment',array('Product_ID' => $product_id,'Member_ID' => $this->user_id));
+            	if(isset($review) && $review != null){
+            		$arr = array(
+            			'Num_Star' => $rating,
+            			'Content'  => $content
+            		);
+            		$this->Common_model->update('Rating_Comment',$arr,array('Product_ID' => $product_id,'Member_ID' => $this->user_id));
+            	}
+            	else{
+            		$arr = array(
+            			'Product_ID' => $product_id,
+            			'Member_ID' => $this->user_id,
+            			'Num_Star' => $rating,
+            			'Content'  => $content,
+            			'Create_at' => date('Y-m-d')
+            		);
+            		$this->Common_model->add('Rating_Comment',$arr);
+            	}
+            	$sql = "SELECT AVG(Num_Star) AS avg,count(ID) AS count FROM Rating_Comment WHERE Product_ID = '$product_id' ";
+            	$record = $this->Common_model->query_raw_row($sql);
+
+            	$arr = array(
+            		'Average_Rating' => isset($record['avg']) && $record['avg'] != null ? $record['avg'] : 0,
+            		'Total_Rating' => isset($record['count']) && $record['count'] != null ? $record['count'] : 0
+            	);
+            	$this->Common_model->update('Products',$arr,array('ID' => $product_id));
+            	$data['status'] = 'success';
+            }
+        }
+        die(json_encode($data));
+	}
+
+    public function logout(){
+        $this->session->sess_destroy();
+        redirect(base_url('/home/'));
+    }
+
+    public function history_order (){
+        $page_current = ($this->input->get("per_page") != "") ? $this->input->get("per_page") : 0 ;    
+        $per_page = 10;
+        $page_current = ($page_current > 0) ? ($page_current - 1) : $page_current;
+        $offset = $per_page * $page_current;
+
+        $this->db->select("Products.ID");
+        $this->db->from("Products");
+        $this->db->join("Order_Detail","Order_Detail.Product_ID = Products.ID");
+        $this->db->join("Orders","Order_Detail.Order_ID = Orders.ID");
+        $this->db->where("Orders.Member_ID",$this->user_id);
+        $countdata = $this->db->count_all_results();
+
+        $this->db->select("Products.*,Orders.Status_Order,Orders.Total_Order,Order_Detail.Qty,Order_Detail.Start_Day,Order_Detail.Expires_at,Order_Detail.Create_at");
+        $this->db->from("Products");
+        $this->db->join("Order_Detail","Order_Detail.Product_ID = Products.ID");
+        $this->db->join("Orders","Order_Detail.Order_ID = Orders.ID");
+        $this->db->where("Orders.Member_ID",$this->user_id);
+        $this->db->limit($per_page,$offset);
+        $this->db->order_by('Order_Detail.ID', 'DESC');
+        $query = $this->db->get();
+        $listrecord = $query->result_array();
+        $this->data["records"] = ($listrecord);
+        $this->load->library('pagination');
+        $config['base_url'] = base_url("profile/history_order/");
+        $config['total_rows'] = $countdata ;
+        $config['per_page'] = $per_page;
+        $config['full_tag_open'] = '<ul class="pagination">';
+        $config['full_tag_close'] = '</ul>';
+        $config['cur_tag_open'] = '<li class="active"><a>';
+        $config['cur_tag_close'] = '</a></li>';
+        $config['num_tag_open'] = '<li>';
+        $config['num_tag_close'] = '</li>';
+        $config['prev_tag_open'] = '<li>';
+        $config['prev_tag_close'] = '</li>';
+        $config['next_tag_open'] = '<li>';
+        $config['next_tag_close'] = '</li>';
+        $config['next_link'] = 'Next &rarr;';
+        $config['prev_link'] = '&larr; Previous';
+        $config['first_link'] = '<< First';
+        $config['last_link'] = 'Last >>';
+        $config['last_tag_open'] = '<li>';
+        $config['last_tag_close'] = '</li>';
+        $config['first_tag_open'] = '<li>';
+        $config['first_tag_close'] = '</li>';
+        $config['enable_query_strings']  = true;
+        $config['page_query_string']  = true;
+        $config['query_string_segment'] = "per_page";
+        $config['use_page_numbers'] = TRUE;
+        $this->pagination->initialize($config);
+        $this->load->view('frontend/block/header',$this->data);
+        $this->load->view('frontend/profile/history_order',$this->data);
+        $this->load->view('frontend/block/footer',$this->data);
+    }
+
+    public function owner_order(){
+        $page_current = ($this->input->get("per_page") != "") ? $this->input->get("per_page") : 0 ;    
+        $per_page = 10;
+        $page_current = ($page_current > 0) ? ($page_current - 1) : $page_current;
+        $offset = $per_page * $page_current;
+
+        $this->db->select("Products.ID");
+        $this->db->from("Products");
+        $this->db->join("Order_Detail","Order_Detail.Product_ID = Products.ID");
+        $this->db->join("Orders","Order_Detail.Order_ID = Orders.ID");
+        $this->db->where("Orders.Member_Owner_ID",$this->user_id);
+        $countdata = $this->db->count_all_results();
+
+        $this->db->select("Products.*,Orders.Status_Order,Orders.Total_Discount,Orders.Createdat_Owner,Orders.Status_Owner");
+        $this->db->from("Products");
+        $this->db->join("Order_Detail","Order_Detail.Product_ID = Products.ID");
+        $this->db->join("Orders","Order_Detail.Order_ID = Orders.ID");
+        $this->db->where("Orders.Member_Owner_ID",$this->user_id);
+        $this->db->limit($per_page,$offset);
+        $this->db->order_by('Order_Detail.ID', 'DESC');
+        $query = $this->db->get();
+        $listrecord = $query->result_array();
+        $this->data["records"] = ($listrecord);
+        $this->load->library('pagination');
+        $config['base_url'] = base_url("profile/owner_order/");
+        $config['total_rows'] = $countdata ;
+        $config['per_page'] = $per_page;
+        $config['full_tag_open'] = '<ul class="pagination">';
+        $config['full_tag_close'] = '</ul>';
+        $config['cur_tag_open'] = '<li class="active"><a>';
+        $config['cur_tag_close'] = '</a></li>';
+        $config['num_tag_open'] = '<li>';
+        $config['num_tag_close'] = '</li>';
+        $config['prev_tag_open'] = '<li>';
+        $config['prev_tag_close'] = '</li>';
+        $config['next_tag_open'] = '<li>';
+        $config['next_tag_close'] = '</li>';
+        $config['next_link'] = 'Next &rarr;';
+        $config['prev_link'] = '&larr; Previous';
+        $config['first_link'] = '<< First';
+        $config['last_link'] = 'Last >>';
+        $config['last_tag_open'] = '<li>';
+        $config['last_tag_close'] = '</li>';
+        $config['first_tag_open'] = '<li>';
+        $config['first_tag_close'] = '</li>';
+        $config['enable_query_strings']  = true;
+        $config['page_query_string']  = true;
+        $config['query_string_segment'] = "per_page";
+        $config['use_page_numbers'] = TRUE;
+        $this->pagination->initialize($config);
+        $this->load->view('frontend/block/header',$this->data);
+        $this->load->view('frontend/profile/owner_order',$this->data);
+        $this->load->view('frontend/block/footer',$this->data);
+    }
+
+    public function product(){
+        $user_id = $this->user_id;
+        $where = "Member_ID = '$user_id'";
+        $count_table =  $this->Common_model->count_table("Products",$where);
+        $page_current = ($this->input->get("per_page") != "") ? $this->input->get("per_page") : 0 ;    
+        $per_page = 20;
+        $page_current = ($page_current > 0) ? ($page_current - 1) : $page_current;
+        $offset = $per_page * $page_current;
+        $this->data["products"] = $this->Common_model->get_result("Products",$where,$offset,$per_page);
+        $this->load->library('pagination');
+        $config['base_url'] = base_url("/product/");
+        $config['total_rows'] = $count_table ;
+        $config['per_page'] = $per_page;
+        $config['full_tag_open'] = '<ul class="pagination">';
+        $config['full_tag_close'] = '</ul>';
+        $config['cur_tag_open'] = '<li class="active"><a>';
+        $config['cur_tag_close'] = '</a></li>';
+        $config['num_tag_open'] = '<li>';
+        $config['num_tag_close'] = '</li>';
+        $config['prev_tag_open'] = '<li>';
+        $config['prev_tag_close'] = '</li>';
+        $config['next_tag_open'] = '<li>';
+        $config['next_tag_close'] = '</li>';
+        $config['next_link'] = 'Next &rarr;';
+        $config['prev_link'] = '&larr; Previous';
+        $config['first_link'] = '<< First';
+        $config['last_link'] = 'Last >>';
+        $config['last_tag_open'] = '<li>';
+        $config['last_tag_close'] = '</li>';
+        $config['first_tag_open'] = '<li>';
+        $config['first_tag_close'] = '</li>';
+        $config['enable_query_strings']  = true;
+        $config['page_query_string']  = true;
+        $config['query_string_segment'] = "per_page";
+        $config['use_page_numbers'] = TRUE;
+        $this->pagination->initialize($config);
+        $this->load->view('frontend/block/header',$this->data);
+        $this->load->view('frontend/product/index',$this->data);
+        $this->load->view('frontend/block/footer',$this->data);
+    }
+
+
+    public function listing() {
+        $user_id = $this->user_id;
+        $where = "Member_ID = '$user_id'";
+        $count_table =  $this->Common_model->count_table("Listing",$where);
+        $page_current = ($this->input->get("per_page") != "") ? $this->input->get("per_page") : 0 ;    
+        $per_page = 20;
+        $page_current = ($page_current > 0) ? ($page_current - 1) : $page_current;
+        $offset = $per_page * $page_current;
+        
+        $sql = "SELECT l.*, le.Extend_Date, (datediff(le.Extend_Date, now()) + 7) AS DayLeft 
+                    FROM Listing AS l INNER JOIN Listing_Extend AS le ON l.ID = le.Listing_ID 
+                    WHERE 
+                        Member_ID = '{$user_id}' AND le.Status = '1'
+                    LIMIT
+                        {$offset},{$per_page}
+                         ";
+
+        $this->data["collections"] = $this->Common_model->query_raw($sql);
+        $this->load->library('pagination');
+        $config['base_url'] = base_url("/profile/listing/");
+        $config['total_rows'] = $count_table ;
+        $config['per_page'] = $per_page;
+        $config['full_tag_open'] = '<ul class="pagination">';
+        $config['full_tag_close'] = '</ul>';
+        $config['cur_tag_open'] = '<li class="active"><a>';
+        $config['cur_tag_close'] = '</a></li>';
+        $config['num_tag_open'] = '<li>';
+        $config['num_tag_close'] = '</li>';
+        $config['prev_tag_open'] = '<li>';
+        $config['prev_tag_close'] = '</li>';
+        $config['next_tag_open'] = '<li>';
+        $config['next_tag_close'] = '</li>';
+        $config['next_link'] = 'Next &rarr;';
+        $config['prev_link'] = '&larr; Previous';
+        $config['first_link'] = '<< First';
+        $config['last_link'] = 'Last >>';
+        $config['last_tag_open'] = '<li>';
+        $config['last_tag_close'] = '</li>';
+        $config['first_tag_open'] = '<li>';
+        $config['first_tag_close'] = '</li>';
+        $config['enable_query_strings']  = true;
+        $config['page_query_string']  = true;
+        $config['query_string_segment'] = "per_page";
+        $config['use_page_numbers'] = TRUE;
+        $this->pagination->initialize($config);
+        $this->load->view('frontend/block/header',$this->data);
+        $this->load->view('frontend/profile/listing',$this->data);
+        $this->load->view('frontend/block/footer',$this->data);
+    }
+    public function extendlisting($listing_id = null){
+    	$date = date('Y-m-d', strtotime("-7 days"));
+    	$sql = "SELECT *
+    			FROM Listing AS l
+    			INNER JOIN Listing_Extend AS le ON l.id = le.Listing_ID 
+    			WHERE l.id = '$listing_id' AND le.Status = '1' AND le.Extend_Date < '$date' ";
+    	$result = $this->Common_model->query_raw_row($sql);
+    	if(isset($result) && $result != null){
+    		$arr = array(
+    			'Status' => 0
+    		);
+    		$this->Common_model->update('Listing_Extend',$arr,array('Listing_ID' => $listing_id));
+    		$arr = array(
+    			'Status' => 1,
+    			'Listing_ID' => $listing_id,
+    			'Extend_Date' => date('Y-m-d H:i:s')
+    		);
+    		$this->Common_model->add('Listing_Extend',$arr);
+			$this->session->set_flashdata('message', '<div class="alert alert-success">Save successfully.</div>');
+    	}
+    	redirect('/profile/listing');
+    }
+
+    public function expiredlisting(){
+    	$date = date('Y-m-d', strtotime("-7 days"));
+    	$sql = "SELECT l.*,m.Email
+    			FROM Listing AS l
+    			INNER JOIN Members AS m ON m.id = l.Member_ID 
+    			INNER JOIN Listing_Extend AS le ON l.id = le.Listing_ID 
+    			WHERE le.Status = '1' AND le.Extend_Date < '$date' 
+    			GROUP BY l.ID";
+    	$result = $this->Common_model->query_raw($sql);
+    	echo count($result);
+    	if(isset($result) && $result != null){
+    		foreach ($result as $key => $item) {
+    			 /*$message = "Hi " . $name . ",<br/><br/>
+		                    You have requested to reset the password for your CouchStay account.<br/>
+		                    To reset your password at CouchStay, click the link below:<br/>
+		                    <a href='" . base_url() . "?reset=reset&email=" . $email . "&token=" . $token . "'>" . base_url() . "?reset=reset&email=" . $email . "&token=" . $token . "</a><br/>
+		                    If clicking the link above doesn't work, please copy it into a new browser window.<br/><br/>
+		                    If you did not attempt to reset your password, or if you have already managed to retrieve your password, you can ignore this message and continue using CouchStay with your current password.";
+			        $replace = array("[%firstname%]", "[%link%]");
+			        $replace_with = array('', '');
+			        $sentdata = str_replace($replace, $replace_with, $message);
+			        $msg = $this->load->view('frontend/block/emailtemplate', array('content' => htmlspecialchars_decode($sentdata)), true);
+			        
+			        $to = $item['Email'];
+			        $subject = "Extend Listing";
+			        sendmail($to, $subject, $msg);*/
+    		}
+    	}
+    }
+
+    public function addlisting() {
+        if ($this->input->post()) {
+            $this->load->library('form_validation');
+            // $this->form_validation->set_rules('name', 'Name', 'required|trim');
+            $this->form_validation->set_rules('summary', 'Summary', 'required|trim');
+            // $this->form_validation->set_rules('detail', 'Detail', 'required|trim');
+            $this->form_validation->set_rules('address', 'Address', 'required|trim');
+            $this->form_validation->set_rules('city', 'City', 'required|trim');
+            $this->form_validation->set_rules('state', 'State', 'required|trim');
+            $this->form_validation->set_rules('country', 'Country', 'required|trim');
+            $this->form_validation->set_rules('price', 'Price', 'required|trim');
+            // $this->form_validation->set_rules('heroimage', 'HeroImage', 'required');
+            if ($this->form_validation->run() == FALSE) {
+                $this->session->set_flashdata('message', '<div class="alert alert-danger">'.validation_errors().'</div>');
+            } else {
+                include_once("ImageManipulator.php");
+                $image = '';
+                if (isset($_FILES['heroimage']) && is_uploaded_file($_FILES['heroimage']['tmp_name'])) {
+                    $output_dir = FCPATH."/uploads/member/".$this->user_id.'/';
+                    $output_url = "/uploads/member/".$this->user_id.'/';
+
+                    if (!file_exists($output_dir)) {
+                        mkdir($output_dir, 0777, true);
+                    }
+
+                    $allowed =  array('gif','png' ,'jpg');
+                    $filename = $_FILES['heroimage']['name'];
+                    $ext = pathinfo($filename, PATHINFO_EXTENSION);
+                    $ext = strtolower($ext);
+                    if(in_array($ext,$allowed)) {
+                        $RandomNum    = time();
+                        $ImageName    = str_replace(' ', '-', strtolower($_FILES['heroimage']['name']));
+                        $ImageType    = $_FILES['heroimage']['type']; //"image/png", image/jpeg etc. 
+                        $ImageExt     = substr($ImageName, strrpos($ImageName, '.'));
+                        $ImageExt     = str_replace('.', '', $ImageExt);
+                        $ImageName    = preg_replace("/\.[^.\s]{3,4}$/", "", $ImageName);
+                        $NewImageName = $ImageName . '-' . $RandomNum . '.' . $ImageExt;
+
+                        $newNamePrefix = time() . '_';
+                        $manipulator = new ImageManipulator($_FILES['heroimage']['tmp_name']);
+
+                        $width  = $manipulator->getWidth();
+                        $height = $manipulator->getHeight();
+
+                        $x1 = 0;
+                        $y1 = 0;
+                        if (4*$width < 3*$height) {
+                            $x2 = $width;
+                            $y2 = round(($x2*3)/4);
+                        } else {
+                            $x2 = $height;
+                            $y2 = round(($x2*3)/4);
+                        }
+                        // center cropping to 200x130
+                        $newImage = $manipulator->crop($x1, $y1, $x2, $y2);
+
+                        // saving file to uploads folder
+                        $manipulator->save($output_dir . $newNamePrefix . $_FILES['heroimage']['name']);
+                        $image = $output_url . $newNamePrefix . $_FILES['heroimage']['name'];
+
+                        //if (move_uploaded_file($_FILES["heroimage"]["tmp_name"], $output_dir . $NewImageName)) {
+                            //$image = $output_url.$NewImageName;
+                            //$image = $output_url.$NewImageName;
+                            //$newNamePrefix = time() . '_';
+                            //$manipulator = new ImageManipulator($_FILES['fileToUpload']['tmp_name']);
+                            // resizing to 1000x750
+                            //$newImage = $manipulator->resample(1000, 750);
+                            // saving file to uploads folder
+                            //$manipulator->save($output_dir . $newNamePrefix . $_FILES['fileToUpload']['name']);
+                            //$image = $output_url . $newNamePrefix . $_FILES['fileToUpload']['name'];
+                        //}
+                    }
+                }
+
+                $gallary = array();
+                if (isset($_FILES['upload_file'])) {
+                    $this->load->library('upload');
+                    $files = $_FILES;
+                    $cpt = count($_FILES['upload_file']['name']);
+                    for($i=0; $i < $cpt; $i++)
+                    {           
+                        $_FILES['files']['name']= $files['upload_file']['name'][$i];
+                        $_FILES['files']['type']= $files['upload_file']['type'][$i];
+                        $_FILES['files']['tmp_name']= $files['upload_file']['tmp_name'][$i];
+                        $_FILES['files']['error']= $files['upload_file']['error'][$i];
+                        $_FILES['files']['size']= $files['upload_file']['size'][$i];    
+
+                        $output_dir = FCPATH."/uploads/gallery/".$this->user_id.'/';
+                        $output_url = "/uploads/gallery/".$this->user_id.'/';
+
+                        if (!file_exists($output_dir)) {
+                            mkdir($output_dir, 0777, true);
+                        }
+
+                        $allowed =  array('gif','png' ,'jpg');
+                        $filename = $_FILES['files']['name'];
+                        $ext = pathinfo($filename, PATHINFO_EXTENSION);
+                        $ext = strtolower($ext);
+                        if(in_array($ext,$allowed)) {
+                            $newNamePrefix = time() . '_';
+                            $manipulator = new ImageManipulator($_FILES['files']['tmp_name']);
+
+                            $width  = $manipulator->getWidth();
+                            $height = $manipulator->getHeight();
+
+                            $x1 = 0;
+                            $y1 = 0;
+                            if (4*$width < 3*$height) {
+                                $x2 = $width;
+                                $y2 = round(($x2*3)/4);
+                            } else {
+                                $x2 = $height;
+                                $y2 = round(($x2*3)/4);
+                            }
+                            // center cropping to 200x130
+                            $newImage = $manipulator->crop($x1, $y1, $x2, $y2);
+
+                            // saving file to uploads folder
+                            $manipulator->save($output_dir . $newNamePrefix . $_FILES['files']['name']);
+                            $gallary[] = $output_url . $newNamePrefix . $_FILES['files']['name'];
+
+                            /*$RandomNum    = time();
+                            $ImageName    = str_replace(' ', '-', strtolower($_FILES['files']['name']));
+                            $ImageType    = $_FILES['files']['type']; //"image/png", image/jpeg etc. 
+                            $ImageExt     = substr($ImageName, strrpos($ImageName, '.'));
+                            $ImageExt     = str_replace('.', '', $ImageExt);
+                            $ImageName    = preg_replace("/\.[^.\s]{3,4}$/", "", $ImageName);
+                            $NewImageName = $ImageName . '-' . $RandomNum . '.' . $ImageExt;
+                            if(move_uploaded_file($_FILES["files"]["tmp_name"], $output_dir . $NewImageName)){
+                                $gallary[] = $output_url.$NewImageName;
+                            }*/
+                        }
+                    }
+                }
+
+                $commission = $this->input->post('commission');
+                if (!is_numeric($commission) || $commission <=0 || $commission > 100) {
+                    $commission = 2;
+                }
+
+                $arr  = array(
+                    'Member_ID' => $this->user_id,
+                    'Name' => $this->input->post('address'),
+                    'Summary' => $this->input->post('summary'),
+                    'Price' => $this->input->post('price'),
+                    'Commission' => $commission,
+                    'Detail' => $this->input->post('detail'),
+                    'Rates' => '',
+                    'SlideImage' => json_encode($gallary),
+                    'HeroImage' => $image,
+                    'Address' => $this->input->post('address'),
+                    'City' => $this->input->post('city'),
+                    'State' => $this->input->post('state'),
+                    'Zipcode' => $this->input->post('zipcode'),
+                    'Country' => $this->input->post('country'),
+                    'Updated_At' => date('Y-m-d H:i:s'),
+                    'Status' => 1
+                );
+                $last_id = $this->Common_model->add("Listing", $arr);
+                if (isset($last_id) && $last_id != null && is_numeric($last_id)) {
+                    // Update Listing_Extend
+                    $this->Common_model->update("Listing_Extend", array("Status" => 0), array('Listing_ID' => $last_id));
+
+                    // Add new item Extend
+                    $id = $this->Common_model->add("Listing_Extend", array('Listing_ID' => $last_id, 'Status' => 1));
+
+                    $this->session->set_flashdata('message', '<div class="alert alert-success">Save successfully.</div>');
+                    redirect('/profile/editlisting/'.$last_id);
+                } else {
+                    $this->session->set_flashdata('message', '<div class="alert alert-danger">Error!.</div>');
+                }
+            }
+            redirect('/profile/addlisting');
+        }
+        $this->data['title'] = 'New Listing';
+        $this->load->view('frontend/block/header',$this->data);
+        $this->load->view('frontend/profile/addlisting',$this->data);
+        $this->load->view('frontend/block/footer',$this->data);
+    }
+
+    public function editlisting($listing_id = null) {
+        $user_id = $this->user_id;
+        $record = $this->Common_model->get_record("Listing", array('ID' => $listing_id,'Member_ID' => $user_id));
+        if(!(isset($record) && $record != null)){
+            redirect('/profile/addlisting');
+        }
+        if ($this->input->post()) {
+            $this->load->library('form_validation');
+            // $this->form_validation->set_rules('name', 'Name', 'required|trim');
+            $this->form_validation->set_rules('summary', 'Summary', 'required|trim');
+            // $this->form_validation->set_rules('detail', 'Detail', 'required|trim');
+            $this->form_validation->set_rules('address', 'Address', 'required|trim');
+            $this->form_validation->set_rules('city', 'City', 'required|trim');
+            $this->form_validation->set_rules('state', 'State', 'required|trim');
+            $this->form_validation->set_rules('country', 'Country', 'required|trim');
+            $this->form_validation->set_rules('price', 'Price', 'required|trim');
+            // $this->form_validation->set_rules('heroimage', 'HeroImage', 'required');
+            if ($this->form_validation->run() == FALSE) {
+                $this->session->set_flashdata('message', '<div class="alert alert-danger">'.validation_errors().'</div>');
+            } else {
+                include_once("ImageManipulator.php");
+                $image = @$record['HeroImage'];
+                if (isset($_FILES['heroimage']) && is_uploaded_file($_FILES['heroimage']['tmp_name'])) {
+                    $output_dir = FCPATH."/uploads/member/".$this->user_id.'/';
+                    $output_url = "/uploads/member/".$this->user_id.'/';
+
+                    if (!file_exists($output_dir)) {
+                        mkdir($output_dir, 0777, true);
+                    }
+
+                    $allowed =  array('gif','png' ,'jpg');
+                    $filename = $_FILES['heroimage']['name'];
+                    $ext = pathinfo($filename, PATHINFO_EXTENSION);
+                    $ext = strtolower($ext);
+                    if (in_array($ext,$allowed)) {
+                        $RandomNum    = time();
+                        $ImageName    = str_replace(' ', '-', strtolower($_FILES['heroimage']['name']));
+                        $ImageType    = $_FILES['heroimage']['type']; //"image/png", image/jpeg etc. 
+                        $ImageExt     = substr($ImageName, strrpos($ImageName, '.'));
+                        $ImageExt     = str_replace('.', '', $ImageExt);
+                        $ImageName    = preg_replace("/\.[^.\s]{3,4}$/", "", $ImageName);
+                        $NewImageName = $ImageName . '-' . $RandomNum . '.' . $ImageExt;
+                        //if(move_uploaded_file($_FILES["heroimage"]["tmp_name"], $output_dir . $NewImageName)){
+                            //$image = $output_url.$NewImageName;
+                            //$image = $output_url.$NewImageName;
+
+                            $newNamePrefix = time() . '_';
+                            $manipulator = new ImageManipulator($_FILES['heroimage']['tmp_name']);
+
+                            $width  = $manipulator->getWidth();
+                            $height = $manipulator->getHeight();
+
+                            $x1 = 0;
+                            $y1 = 0;
+                            if (4*$width < 3*$height) {
+                                $x2 = $width;
+                                $y2 = round(($x2*3)/4);
+                            } else {
+                                $x2 = $height;
+                                $y2 = round(($x2*3)/4);
+                            }
+                            // center cropping to 200x130
+                            $newImage = $manipulator->crop($x1, $y1, $x2, $y2);
+
+                            // saving file to uploads folder
+                            $manipulator->save($output_dir . $newNamePrefix . $_FILES['heroimage']['name']);
+                            $image = $output_url . $newNamePrefix . $_FILES['heroimage']['name'];
+
+                        //}
+                    }
+                }
+
+                $gallary = $this->input->post('gallery');
+                $slideImage = json_decode(@$record['SlideImage'],true);
+                if(isset($slideImage) && $slideImage != null){
+                    foreach ($slideImage as $key => $item) {
+                        if(isset($gallary) && is_array($gallary) && !in_array($item, $gallary)){
+                            @unlink(FCPATH.$item);
+                        }
+                    }
+                }
+                if (isset($_FILES['upload_file'])) {
+                    $this->load->library('upload');
+                    $files = $_FILES;
+                    $cpt = count($_FILES['upload_file']['name']);
+                    for($i=0; $i < $cpt; $i++)
+                    {           
+                        $_FILES['files']['name']= $files['upload_file']['name'][$i];
+                        $_FILES['files']['type']= $files['upload_file']['type'][$i];
+                        $_FILES['files']['tmp_name']= $files['upload_file']['tmp_name'][$i];
+                        $_FILES['files']['error']= $files['upload_file']['error'][$i];
+                        $_FILES['files']['size']= $files['upload_file']['size'][$i];    
+
+                        $output_dir = FCPATH."/uploads/gallery/".$this->user_id.'/';
+                        $output_url = "/uploads/gallery/".$this->user_id.'/';
+
+                        if (!file_exists($output_dir)) {
+                            mkdir($output_dir, 0777, true);
+                        }
+
+                        $allowed =  array('gif','png' ,'jpg');
+                        $filename = $_FILES['files']['name'];
+                        $ext = pathinfo($filename, PATHINFO_EXTENSION);
+                        $ext = strtolower($ext);
+                        if(in_array($ext,$allowed)) {
+                            $newNamePrefix = time() . '_';
+                            $manipulator = new ImageManipulator($_FILES['files']['tmp_name']);
+
+                            $width  = $manipulator->getWidth();
+                            $height = $manipulator->getHeight();
+
+                            $x1 = 0;
+                            $y1 = 0;
+                            if (4*$width < 3*$height) {
+                                $x2 = $width;
+                                $y2 = round(($x2*3)/4);
+                            } else {
+                                $x2 = $height;
+                                $y2 = round(($x2*3)/4);
+                            }
+                            // center cropping to 200x130
+                            $newImage = $manipulator->crop($x1, $y1, $x2, $y2);
+
+                            // saving file to uploads folder
+                            $manipulator->save($output_dir . $newNamePrefix . $_FILES['files']['name']);
+                            $gallary[] = $output_url . $newNamePrefix . $_FILES['files']['name'];
+
+                            /*$RandomNum    = time();
+                            $ImageName    = str_replace(' ', '-', strtolower($_FILES['files']['name']));
+                            $ImageType    = $_FILES['files']['type']; //"image/png", image/jpeg etc. 
+                            $ImageExt     = substr($ImageName, strrpos($ImageName, '.'));
+                            $ImageExt     = str_replace('.', '', $ImageExt);
+                            $ImageName    = preg_replace("/\.[^.\s]{3,4}$/", "", $ImageName);
+                            $NewImageName = $ImageName . '-' . $RandomNum . '.' . $ImageExt;
+                            if(move_uploaded_file($_FILES["files"]["tmp_name"], $output_dir . $NewImageName)){
+                                $gallary[] = $output_url.$NewImageName;
+                            }*/
+                        }
+                    }
+                }
+
+                $commission = $this->input->post('commission');
+                if (!is_numeric($commission) || $commission <=0 || $commission > 100) {
+                    $commission = 2;
+                }
+                $arr  = array(
+                    'Member_ID' => $this->user_id,
+                    'Name' => $this->input->post('address'),
+                    'Summary' => $this->input->post('summary'),
+                    'Price' => $this->input->post('price'),
+                    'Commission' => $commission,
+                    'Detail' => $this->input->post('detail'),
+                    'SlideImage' => json_encode($gallary),
+                    'HeroImage' => $image,
+                    'Address' => $this->input->post('address'),
+                    'City' => $this->input->post('city'),
+                    'State' => $this->input->post('state'),
+                    'Zipcode' => $this->input->post('zipcode'),
+                    'Country' => $this->input->post('country'),
+                );
+                $result = $this->Common_model->update("Listing", $arr,array('ID' => $listing_id,'Member_ID' => $user_id));
+                if ($result) {
+                    $this->session->set_flashdata('message', '<div class="alert alert-success">Save successfully.</div>');
+                } else {
+                    $this->session->set_flashdata('message', '<div class="alert alert-danger">Error!.</div>');
+                }
+            }
+            redirect('/profile/editlisting/'.$listing_id);
+        }
+        $this->data['product'] = $record;
+        $this->data['title'] = 'Edit Listing';
+        $this->load->view('frontend/block/header',$this->data);
+        $this->load->view('frontend/profile/editlisting',$this->data);
+        $this->load->view('frontend/block/footer',$this->data);
+    }
+
+    public function dellisting($listing_id = null) {
+        $user_id = $this->user_id;
+        $record = $this->Common_model->get_record("Listing", array('ID' => $listing_id,'Member_ID' => $user_id));
+        if(!(isset($record) && $record != null)){
+            redirect('/profile/listing');
+        }
+        $result = $this->Common_model->delete("Listing", array('ID' => $listing_id,'Member_ID' => $user_id));
+        if($result){
+        	if(isset($record['HeroImage']) && $record['HeroImage'] != null){
+	        	 @unlink(FCPATH.$record['HeroImage']);
+	        }
+	        $slideImage = json_decode(@$record['SlideImage'],true);
+	        if(isset($slideImage) && $slideImage != null){
+	            foreach ($slideImage as $key => $item) {
+	                if(isset($item) && $item != null){
+	                    @unlink(FCPATH.$item);
+	                }
+	            }
+	        }
+	        $this->session->set_flashdata('message', '<div class="alert alert-success">Delete successfully.</div>');
+        }
+        redirect('/profile/listing');
+    }
+}

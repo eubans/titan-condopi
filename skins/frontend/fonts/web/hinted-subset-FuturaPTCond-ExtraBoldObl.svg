@@ -1,0 +1,46 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" >
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1">
+<metadata>
+Created by FontForge 20170731 at Fri Apr 26 10:12:37 2019
+ By Aleksey,,,
+Copyright (c) 1995 ParaGraph Intl., (c) 1998 ParaType Inc., ParaType Ltd. All rights reserved.
+</metadata>
+<defs>
+<font id="FuturaPTCond-ExtraBoldObl" horiz-adv-x="233" >
+  <font-face 
+    font-family="Futura PT Cond Extra Bold Ital"
+    font-weight="400"
+    font-style="italic"
+    font-stretch="condensed"
+    units-per-em="1000"
+    panose-1="2 11 10 6 2 2 4 9 2 3"
+    ascent="800"
+    descent="-200"
+    bbox="-23 -10 507 866"
+    underline-thickness="50"
+    underline-position="-200"
+    slope="-7"
+    unicode-range="U+0020-0103"
+  />
+<missing-glyph 
+ />
+    <glyph glyph-name=".notdef" 
+ />
+    <glyph glyph-name=".null" horiz-adv-x="0" 
+ />
+    <glyph glyph-name="nonmarkingreturn" horiz-adv-x="333" 
+ />
+    <glyph glyph-name="space" unicode=" " 
+ />
+    <glyph glyph-name="Abreve" unicode="&#x102;" horiz-adv-x="524" 
+d="M491 0h-183l-3 85h-119l-25 -85h-184l240 667h217zM300 305v87q0 1 3 115q-3 -11 -10.5 -43.5t-12.5 -50.5q-6 -21 -24 -86t-29 -100h75q-2 52 -2 78zM438 866h69q-14 -68 -60.5 -108t-115.5 -40q-61 0 -100.5 35.5t-39.5 95.5v17h69q8 -32 27.5 -42.5t54.5 -10.5
+q37 0 58.5 11t37.5 42z" />
+    <glyph glyph-name="abreve" unicode="&#x103;" horiz-adv-x="489" 
+d="M479 467l-57 -467h-171q3 13 8 39.5t7 39.5q-53 -89 -130 -89q-33 0 -56.5 17t-35 45t-16.5 56t-5 59q0 69 14 128q8 33 21 63t32.5 58t48.5 44.5t63 16.5q40 0 62 -21.5t37 -62.5q0 12 1.5 36.5t2.5 37.5h174zM282 288q0 46 -28 46q-31 0 -45 -51t-14 -95q0 -55 31 -55
+q30 0 43 54.5t13 100.5zM398 669h69q-14 -68 -60.5 -108t-115.5 -40q-61 0 -100.5 35.5t-39.5 95.5v17h69q8 -32 27.5 -42.5t54.5 -10.5q37 0 58.5 11t37.5 42z" />
+    <hkern g1="Abreve"
+	g2="Abreve"
+	k="-21" />
+  </font>
+</defs></svg>

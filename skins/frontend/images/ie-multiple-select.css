@@ -1,0 +1,14 @@
+.ms-choice {
+    border: 1px solid #000000!important;
+}
+
+.ms-choice div {
+	position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background-image: url('multiple-select.png');
+    background-repeat: no-repeat;
+    background-position: left top;
+}
